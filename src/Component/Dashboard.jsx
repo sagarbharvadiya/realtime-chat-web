@@ -1,18 +1,24 @@
-// Dashboard.js
 import React, { useEffect, useState } from "react";
-import { getDocs, collection, addDoc, getDoc, doc } from "firebase/firestore";
+import { getDocs, collection, getDoc, doc } from "firebase/firestore";
 import { db, auth } from "./firebase";
-import { sendFriendRequest } from "./friendUtils";
-import ChatWindow from "./ChatWindow"; // Import your chat component/page
-import emailjs from "@emailjs/browser";
+import ChatComponent from "./ChatComponent";
+import Profile from "./Profile";
+import UserList from "./UserList";
 
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [requestSent, setRequestSent] = useState([]);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [selectedChatUser, setSelectedChatUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
 
+  const handleSendMessage = (user) => {
+    if (user && user.id) {
+      setSelectedUser(user);
+    } else {
+      console.error("Invalid user selected:", user);
+      // Optionally, display a message to the user indicating an issue with user selection
+    }
+  };
+  
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -29,163 +35,71 @@ const Dashboard = () => {
         console.error("Error fetching users:", error);
       }
     };
-  
+
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         setCurrentUser(user);
-  
-        // Retrieve additional user information from Firestore
+
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnapshot = await getDoc(userDocRef);
-  
+
         if (userDocSnapshot.exists()) {
           const userData = userDocSnapshot.data();
-  
-          // Update displayName and photoURL properties
-          user.updateProfile({
-            displayName: userData.username || "Anonymous",
-            photoURL: userData.file || "default_image_url",
-          }).then(() => {
-            // After the update, console log the updated user information
-            console.log("Updated User:", auth.currentUser);
-          });
+          user
+            .updateProfile({
+              displayName: userData.username || "Anonymous",
+              photoURL: userData.file || "default_image_url",
+            })
+            .then(() => {
+              console.log("Updated User:", auth.currentUser);
+            });
         }
       } else {
         setCurrentUser(null);
       }
     });
-  
+
     fetchUsers();
-  
+
     return () => unsubscribe();
   }, []);
-  
-  const handleSendRequest = async (friendId, friendEmail) => {
-    if (currentUser) {
-      try {
-        // Send friend request to the selected user
-        sendFriendRequest(friendId, currentUser.uid);
 
-        // Save the friend request to Firestore
-        const friendRequestsCollection = collection(db, "friendRequests");
-        await addDoc(friendRequestsCollection, {
-          senderId: currentUser.uid,
-          receiverId: friendId,
-          status: "pending",
-        });
-
-        // Notify the friend via email using EmailJS
-        const emailJsServiceId = "service_nm0gdfj";
-        const emailJsTemplateId = "template_vc5cgki";
-        const emailJsUserId = "c_aUCFVITQtpqyIlf";
-
-        const templateParams = {
-          to_email: friendEmail, // Correctly pass the friend's email
-          from_name: currentUser.displayName || "Anonymous", // Replace with the sender's name
-          message: `You have received a new friend request from ${currentUser.email}. 
-          Please log in to your account and accept the request on our website. 
-          Click the following link to go to the website: ${window.location.href}`,
-        };
-
-        await emailjs.send(
-          emailJsServiceId,
-          emailJsTemplateId,
-          templateParams,
-          emailJsUserId
-        );
-
-        console.log("Friend request email sent using EmailJS");
-        setRequestSent((prevRequests) => [...prevRequests, friendId]);
-      } catch (error) {
-        console.error("Error sending friend request email:", error);
-      }
-    } else {
-      alert("User not authenticated. Please log in.");
-    }
+  const handleLogout = () => {
+    auth
+      .signOut()
+      .then(() => {
+        // Redirect to the login form
+        window.location.href = "/login";
+      })
+      .catch((error) => {
+        console.error("Error logging out:", error);
+      });
   };
 
-  const handleOpenChat = (user) => {
-    setChatOpen(true);
-    setSelectedChatUser(user);
-  };
 
   return (
     <div className="container">
-      {currentUser && (
-        <div>
-          <h2>Your Profile</h2>
-          <div className="row">
-            <div className="col-md-6">
-              <div>
-                User ID: {currentUser.uid}
-                <br />
-                Name: {currentUser.displayName || "Anonymous"}
-                <br />
-                Email: {currentUser.email}
-              </div>
-            </div>
-            <div className="col-md-6">
-              <img
-                src={currentUser.photoURL || "default_image_url"}
-                alt={currentUser.displayName || "User"}
-                className="img-fluid"
-              />
-            </div>
-          </div>
+      <div className="d-flex justify-content-end mt-3">
+        <button className="btn btn-danger" onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
+      <div className="row">
+        <div className="col-md-12">
+          {currentUser && <Profile user={currentUser} />}
+          {users.length > 0 && (
+            <UserList
+              users={users.filter((user) => user.email !== currentUser?.email)}
+              onSendMessage={handleSendMessage}
+            />
+          )}
         </div>
-      )}
-
-      <h2>User List</h2>
-      <ul className="list-group">
-        {users.map(
-          (user) =>
-            // Check if the user is not the current user
-            user.id !== currentUser?.uid && (
-              <li key={user.id} className="list-group-item">
-                <div className="row">
-                  <div className="col-md-6">
-                    <div>
-                      User ID: {user.id}
-                      <br />
-                      Name: {user.name}
-                      <br />
-                      Email: {user.email}
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <img
-                      src={user.imageUrl}
-                      alt={user.name}
-                      className="img-fluid"
-                    />
-                    <button
-                      onClick={() => handleSendRequest(user.id, user.email)}
-                      className="btn btn-primary mt-2"
-                      disabled={requestSent.includes(user.id)}
-                    >
-                      {requestSent.includes(user.id)
-                        ? "Request Sent"
-                        : "Send Friend Request"}
-                    </button>
-                    <button
-                      onClick={() => handleOpenChat(user)}
-                      className="btn btn-success mt-2 ml-2"
-                    >
-                      Send Message
-                    </button>
-                  </div>
-                </div>
-              </li>
-            )
-        )}
-      </ul>
-      {chatOpen && selectedChatUser && (
-        <ChatWindow
-          currentUser={currentUser}
-          selectedChatUser={selectedChatUser}
-          onClose={() => setChatOpen(false)}
-        />
-      )}
+      </div>
+      <div className="col-md-12">
+          {selectedUser && (
+            <ChatComponent currentUser={currentUser} selectedUser={selectedUser} />
+          )}
+        </div>
     </div>
   );
 };

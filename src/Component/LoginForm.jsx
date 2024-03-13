@@ -1,20 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "./firebase.js";
 import { NavLink, useNavigate } from "react-router-dom";
 import { sendPasswordResetEmail } from "firebase/auth";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 const LoginForm = () => {
-  const navigate = useNavigate(); // Add this line to get the navigate function
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  useEffect(() => {
+    const auth = getAuth(app);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsRegistered(!!user);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,39 +49,35 @@ const LoginForm = () => {
       const { email, password } = formData;
       await signInWithEmailAndPassword(auth, email, password);
 
-      // Reset the form data after successful submission
       setFormData({
         email: "",
         password: "",
       });
+      setErrorMessage(null);
       alert("User logged in successfully!");
 
-      // Use the navigate function to redirect to the dashboard
       navigate("/dashboard");
     } catch (error) {
       console.error("Error signing in: ", error.message);
-      // Handle login errors - display an error message or perform necessary actions
+      setErrorMessage("Invalid email or password. Please try again.");
     }
   };
 
   const handleForgotPassword = () => {
     const auth = getAuth(app);
-    const emailAddress = formData.email; // Get the user's email from the form
+    const emailAddress = formData.email;
 
     try {
       sendPasswordResetEmail(auth, emailAddress)
         .then(() => {
-          // Password reset email sent successfully
           alert("Password reset email sent. Please check your inbox.");
         })
         .catch((error) => {
           console.error("Error sending password reset email: ", error.message);
-          // Handle errors related to sending the password reset email
           alert("Failed to send password reset email. Please try again.");
         });
     } catch (error) {
       console.error("Error initiating password reset: ", error.message);
-      // Handle other potential errors here
     }
   };
 
@@ -82,7 +90,7 @@ const LoginForm = () => {
               <h2 className="text-center">Login</h2>
               <form onSubmit={handleSubmit} className="row">
                 <div className="mb-3 col-lg-6">
-                 <label htmlFor="Email">Email :</label>
+                  <label htmlFor="Email">Email :</label>
                   <input
                     type="email"
                     className="form-control"
@@ -95,7 +103,7 @@ const LoginForm = () => {
                   />
                 </div>
                 <div className="mb-3 col-lg-6">
-                    <label htmlFor="Password">Password :</label>
+                  <label htmlFor="Password">Password :</label>
                   <div className="input-group">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -117,7 +125,10 @@ const LoginForm = () => {
                       />
                     </button>
                   </div>
-                  <button onClick={handleForgotPassword} className="btn-link forgot-link">
+                  <button
+                    onClick={handleForgotPassword}
+                    className="btn-link forgot-link"
+                  >
                     Forgot password?
                   </button>
                 </div>
@@ -127,7 +138,9 @@ const LoginForm = () => {
                     value="Login"
                     className="btn btn-primary"
                   />
-
+                  {errorMessage && (
+                    <p className="error-message">{errorMessage}</p>
+                  )}
                   <p>
                     Don't have an Account?
                     <NavLink to="/" className="btn-link">
