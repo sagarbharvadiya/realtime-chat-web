@@ -1,63 +1,121 @@
 * {
-  margin: 0;
-  padding: 0;
+  margin    : 0;
+  padding   : 0;
   box-sizing: border-box;
 }
 
 .container {
   max-width: 100%;
-  width: 90%;
-  margin: auto;
+  width    : 90%;
+  margin   : auto;
 }
 
 .fromContainer {
-  background: url(./image/beautiful-tropical-beach-sea-ocean-with-coconut-palm-tree-sunrise-time.jpg);
-  background-repeat: no-repeat;
+  background         : url(./image/beautiful-tropical-beach-sea-ocean-with-coconut-palm-tree-sunrise-time.jpg);
+  background-repeat  : no-repeat;
   background-position: center;
-  height: 100vh;
-  background-size: cover;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: auto;
+  height             : 100vh;
+  background-size    : cover;
+  display            : flex;
+  justify-content    : center;
+  align-items        : center;
+  margin             : auto;
 }
 
 .fromWrapper {
-  box-shadow: 0px 1px 2px 1px white;
+  box-shadow      : 0px 1px 2px 1px white;
   background-color: transparent;
-  padding: 10px;
-  border-radius: 3px;
+  padding         : 10px;
+  border-radius   : 3px;
 }
 
 .fromWrapper h2 {
-  color: white;
+  color  : white;
   padding: 20px 0px;
 }
 
 .btn_d-flex p {
-  font-size: 16px;
-  color: white;
-  font-weight: 600;
-  margin-top: 6px;
+  font-size    : 16px;
+  color        : white;
+  font-weight  : 600;
+  margin-top   : 6px;
   margin-bottom: 0px;
 }
-label{
-  color: #fff;
+
+label {
+  color      : #fff;
   font-weight: bold;
 }
+
 .btn_d-flex a {
-  font-size: 16px;
+  font-size  : 16px;
   font-weight: 600;
   margin-left: 6px;
 }
 
 .btn_d-flex {
-  display: flex;
+  display        : flex;
   justify-content: space-between;
-  gap: 4%;
+  gap            : 4%;
 }
-.forgot-link{
+
+.forgot-link {
   background: none;
-  border: none;
+  border    : none;
   margin-top: 5px;
+}
+
+.error-message {
+  color: red !important;
+}
+
+/* Example CSS using Bootstrap classes for responsiveness */
+
+/* Style for the entire chat container */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Top Left: User Name and Display Picture */
+.top-left {
+  /* Add Bootstrap classes as needed for positioning and styling */
+  padding: 10px;
+}
+
+/* Top Right: Call Icons */
+.top-right {
+  /* Add Bootstrap classes as needed for positioning and styling */
+  padding: 10px;
+}
+
+/* Bottom Left: Emoji and + Options */
+.bottom-left {
+  /* Add Bootstrap classes as needed for positioning and styling */
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+/* Style for individual option icons */
+.option-icon {
+  margin-right: 10px;
+}
+
+/* Bottom Center: Message Input */
+.bottom-center {
+  /* Add Bootstrap classes as needed for positioning and styling */
+  flex: 1;
+  padding: 10px;
+}
+
+/* Bottom Right: Send Button */
+.bottom-right {
+  /* Add Bootstrap classes as needed for positioning and styling */
+  padding: 10px;
+}
+
+.message img{
+  width: 100px;
 }

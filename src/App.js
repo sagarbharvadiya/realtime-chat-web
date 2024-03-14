@@ -6,8 +6,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import RegistrationForm from './Component/RegistrationForm ';
 import LoginForm from './Component/LoginForm';
 import Dashboard from './Component/Dashboard'; // Import the Dashboard component
-import ChatWindow from './Component/ChatWindow'; // Replace with your actual ChatWindow component
-
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -23,7 +21,7 @@ const App = () => {
       />
       <Route
         path="/chat"
-        element={isLoggedIn ? <ChatWindow /> : <Navigate to="/login" />}
+        element={<Navigate to="/login" />}
       />
       <Route path="/dashboard" element={<Dashboard />} /> {/* Add this line */}
     </Routes>
