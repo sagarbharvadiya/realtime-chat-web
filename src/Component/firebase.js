@@ -1,7 +1,8 @@
 import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup,updateProfile } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp,getDoc,doc } from "firebase/firestore"; // Correct import
-import { getStorage } from "firebase/storage";
+// import { getStorage } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -31,8 +32,11 @@ export {
   addDoc,
   onSnapshot,
   updateProfile,
-  getStorage,
+  getStorage,  // Export getStorage
   serverTimestamp,
   doc,
-  getDoc
+  getDoc,
+  uploadBytes,  // Export uploadBytes
+  getDownloadURL,  // Export getDownloadURL
 };
+
