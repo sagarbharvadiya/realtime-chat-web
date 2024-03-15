@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { getDocs, collection, getDoc, doc } from "firebase/firestore";
+import { getDocs, collection, getDoc, doc, onSnapshot } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import ChatComponent from "./ChatComponent";
 import Profile from "./Profile";
 import UserList from "./UserList";
+import LogoutButton from "./LogoutButton";
 
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [userMessages, setUserMessages] = useState({}); // Define userMessages state
 
   const handleSendMessage = (user) => {
     if (user && user.id) {
@@ -18,7 +20,7 @@ const Dashboard = () => {
       // Optionally, display a message to the user indicating an issue with user selection
     }
   };
-  
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -29,6 +31,7 @@ const Dashboard = () => {
           name: doc.data().username,
           imageUrl: doc.data().file || "default_image_url",
           email: doc.data().email,
+          uniqueNumber: doc.data().uniqueNumber,
         }));
         setUsers(usersData);
       } catch (error) {
@@ -64,42 +67,57 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleLogout = () => {
-    auth
-      .signOut()
-      .then(() => {
-        // Redirect to the login form
-        window.location.href = "/login";
-      })
-      .catch((error) => {
-        console.error("Error logging out:", error);
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "messages"), (snapshot) => {
+      const messagesData = {};
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const timestamp = data.timestamp ? data.timestamp.toDate() : null;
+        const message = { ...data, timestamp };
+        if (!messagesData[data.receiver]) {
+          messagesData[data.receiver] = [message];
+        } else {
+          messagesData[data.receiver].push(message);
+        }
       });
-  };
+      setUserMessages(messagesData);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
 
   return (
     <div className="container">
       <div className="d-flex justify-content-end mt-3">
-        <button className="btn btn-danger" onClick={handleLogout}>
-          Logout
-        </button>
+       <LogoutButton/>
       </div>
       <div className="row">
         <div className="col-md-12">
           {currentUser && <Profile user={currentUser} />}
+        </div>
+        <div className="col-md-12">
           {users.length > 0 && (
             <UserList
-              users={users.filter((user) => user.email !== currentUser?.email)}
+              users={users.filter(
+                (user) => user.email !== currentUser?.email
+              )}
               onSendMessage={handleSendMessage}
             />
           )}
         </div>
       </div>
-      <div className="col-md-12">
+      <div className="row">
+        <div className="col-md-12">
           {selectedUser && (
-            <ChatComponent currentUser={currentUser} selectedUser={selectedUser} />
+            <ChatComponent
+              currentUser={currentUser}
+              selectedUser={selectedUser}
+              userMessages={userMessages}
+            />
           )}
         </div>
+      </div>
     </div>
   );
 };
