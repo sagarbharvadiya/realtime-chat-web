@@ -4,7 +4,7 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, auth, createUserWithEmailAndPassword } from "./firebase.js"; // Import the method
 import { collection, addDoc } from "firebase/firestore";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const RegistrationForm = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,7 +17,8 @@ const RegistrationForm = () => {
     confirmPassword: "",
     file: null,
   });
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [FormSubmitted, setFormSubmitted] = useState(false);
+  const navigate = useNavigate(); // Get the history object
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -39,6 +40,11 @@ const RegistrationForm = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
+  const generateUniqueNumber = () => {
+    // Generate a unique number based on the current timestamp
+    return Date.now().toString();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormSubmitted(true);
@@ -52,8 +58,8 @@ const RegistrationForm = () => {
         );
         const user = userCredential.user;
 
-        // Get user's ID
-        const userId = user.uid;
+        // Generate a unique number for the user
+        const uniqueNumber = generateUniqueNumber();
 
         // Store additional user data in Firestore
         const storage = getStorage();
@@ -65,11 +71,12 @@ const RegistrationForm = () => {
         // Get the download URL of the uploaded file
         const fileURL = await getDownloadURL(storageRef);
 
-        // Prepare user data with the file URL, username, and email
+        // Prepare user data with the file URL, username, email, and unique number
         const userData = {
           username: formData.username,
           email: formData.email,
           file: fileURL,
+          uniqueNumber: uniqueNumber,
         };
 
         // Add the form data along with the file URL to the Firestore database
@@ -83,8 +90,12 @@ const RegistrationForm = () => {
           confirmPassword: "",
           file: "",
         });
-
-      alert("User registered and data stored in Firestore with ID: ", userDocRef.id);
+        // Redirect to the dashboard
+        navigate("/dashboard");
+        alert(
+          "User registered and data stored in Firestore with ID: ",
+          userDocRef.id
+        );
       } catch (error) {
         console.error("Error registering user and storing data: ", error);
       }
@@ -92,7 +103,6 @@ const RegistrationForm = () => {
       console.error("Passwords don't match or no file selected");
     }
   };
-
   return (
     <div className="fromContainer">
       <div className="container">
@@ -199,7 +209,9 @@ const RegistrationForm = () => {
                   />
                   <p>
                     Do you have an Account?
-                    <NavLink to="/Login"  className="btn-link">Login</NavLink>
+                    <NavLink to="/Login" className="btn-link">
+                      Login
+                    </NavLink>
                   </p>
                 </div>
               </form>
