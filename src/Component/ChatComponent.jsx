@@ -3,19 +3,22 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPhoneAlt, faVideo } from "@fortawesome/free-solid-svg-icons";
 import {
   db,
-  addDoc,
-  collection,
-  onSnapshot,
-  serverTimestamp,
-  doc,
   getDoc,
-} from "./firebase";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+  doc,
+  getStorage,
+  uploadBytes,
+  addDoc,
+  getDownloadURL,
+  collection,
+  serverTimestamp,
+} from "./firebase"; // Import your Firebase configuration
+import { ref } from "firebase/database"; // Import Realtime Database methods
 import SimplePeer from "simple-peer";
 import Message from "./Message";
 import Input from "./Input";
 import Video from "./Video";
 import FileUpload from "./FileUpload";
+import { onSnapshot } from "firebase/firestore";
 
 const ChatComponent = ({ currentUser, selectedUser, userMessages }) => {
   const [message, setMessage] = useState("");
@@ -25,7 +28,8 @@ const ChatComponent = ({ currentUser, selectedUser, userMessages }) => {
   const [videoStream, setVideoStream] = useState(null);
   const [showCamera, setShowCamera] = useState(false);
   const [peer, setPeer] = useState(null);
-  const [currentUserName, setCurrentUserName] = useState(""); // State to store current user's name
+  const [currentUserName, setCurrentUserName] = useState("");
+
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
   const fileInputRef = useRef(null);
@@ -44,29 +48,23 @@ const ChatComponent = ({ currentUser, selectedUser, userMessages }) => {
     };
 
     fetchUserName(); // Call fetchUserName function when component mounts
-  }, [currentUser]); // Run effect only when currentUser changes
-
+  }, [videoStream, currentUser]); // Run effect only when currentUser changes
+  
   useEffect(() => {
     if (!selectedUser) return;
-
-    const messagesCollection = collection(db, "messages");
+  
+    const messagesCollection = collection(db, `messages`);
     const unsubscribe = onSnapshot(messagesCollection, (snapshot) => {
-      const messageList = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        const timestamp = data.timestamp ? data.timestamp.toDate() : null;
-        return { ...data, timestamp };
-      });
-      setMessages(messageList);
+      const data = snapshot.docs.map((doc) => doc.data());
+      setMessages(data);
     });
-
+  
     return () => {
+      // Unsubscribe from Firestore Realtime updates
       unsubscribe();
-      if (videoStream) {
-        videoStream.getTracks().forEach((track) => track.stop());
-      }
     };
-  }, [videoStream, selectedUser]);
-
+  }, [selectedUser]);
+  
   const handleSend = async () => {
     const trimmedMessage = message.trim();
 
@@ -84,13 +82,11 @@ const ChatComponent = ({ currentUser, selectedUser, userMessages }) => {
         return;
       }
 
+      // Add the new message to the 'messages' collection in Firestore
       const messagesCollection = collection(db, "messages");
-
       await addDoc(messagesCollection, {
         content: trimmedMessage,
-        senderName: currentUserName, // Use current user's name as sender's name
-        imageURL: null,
-        fileURL: null,
+        senderName: currentUserName,
         timestamp: serverTimestamp(),
         sender: currentUser.uid,
         receiver: selectedUser.id,
