@@ -94,7 +94,7 @@ const RegistrationForm = () => {
         navigate("/dashboard");
         alert(
           "User registered and data stored in Firestore with ID: ",
-          userDocRef.id
+          userDocRef.uid
         );
       } catch (error) {
         console.error("Error registering user and storing data: ", error);
